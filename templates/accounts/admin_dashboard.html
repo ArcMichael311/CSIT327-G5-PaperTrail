@@ -1,104 +1,11 @@
+{% extends 'base_dashboard.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - PaperTrail</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=4.5">
-    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}?v=6.0">
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=5.2">
-    <link rel="stylesheet" href="{% static 'css/feature-popup.css' %}?v=1.0">
-</head>
-<body>
-    <!-- Mobile Menu Toggle -->
-    <button class="mobile-menu-toggle" aria-label="Toggle Menu">
-        <i class="fas fa-bars"></i>
-    </button>
 
-    <!-- Sidebar Overlay (Mobile) -->
-    <div class="sidebar-overlay"></div>
+{% block title %}Admin Dashboard{% endblock %}
 
-    <!-- Unified Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <!-- PaperTrail Brand/Toggle -->
-        <div class="sidebar-brand-toggle" id="sidebarToggle">
-            <i class="fas fa-book-reader"></i>
-            <span class="sidebar-text">PaperTrail</span>
-        </div>
+{% block page_title %}Admin Dashboard{% endblock %}
 
-        <!-- Sidebar Content -->
-        <div class="sidebar-content">
-            <!-- Main Navigation -->
-            <nav class="sidebar-nav">
-                <a href="{% url 'accounts:admin_dashboard' %}" class="sidebar-item active">
-                    <i class="fas fa-home"></i>
-                    <span class="sidebar-text">Dashboard</span>
-                </a>
-                <a href="{% url 'resources:resource_list' %}" class="sidebar-item">
-                    <i class="fas fa-book"></i>
-                    <span class="sidebar-text">Resources</span>
-                </a>
-                <a href="{% url 'admin:index' %}" class="sidebar-item" target="_blank">
-                    <i class="fas fa-cog"></i>
-                    <span class="sidebar-text">Admin Panel</span>
-                </a>
-                <a href="#" class="sidebar-item coming-soon" data-feature="coming-soon">
-                    <i class="fas fa-users"></i>
-                    <span class="sidebar-text">User Management</span>
-                    <span class="coming-soon-badge">Soon</span>
-                </a>
-                <a href="#" class="sidebar-item coming-soon" data-feature="coming-soon">
-                    <i class="fas fa-chart-bar"></i>
-                    <span class="sidebar-text">Analytics</span>
-                    <span class="coming-soon-badge">Soon</span>
-                </a>
-            </nav>
-
-            <!-- Sidebar Footer (Profile, Settings, Sign Out) -->
-            <div class="sidebar-footer">
-                <a href="{% url 'accounts:profile' %}" class="sidebar-item">
-                    <i class="fas fa-user"></i>
-                    <span class="sidebar-text">Profile</span>
-                </a>
-                <a href="{% url 'accounts:settings' %}" class="sidebar-item">
-                    <i class="fas fa-cog"></i>
-                    <span class="sidebar-text">Settings</span>
-                </a>
-                <a href="{% url 'accounts:logout' %}" class="sidebar-item logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="sidebar-text">Sign Out</span>
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Main Content -->
-    <div class="main-content" id="mainContent">
-        <div class="dashboard-main">
-            <div class="container-fluid">
-                <!-- Dashboard Header -->
-                <div class="dashboard-header">
-                    <div class="dashboard-title-section">
-                        <h1 class="dashboard-title">Admin Dashboard</h1>
-                        <p class="dashboard-date">Platform overview and management tools</p>
-                    </div>
-                    
-                    <div class="dashboard-actions">
-                        <!-- Search Box -->
-                        <div class="search-box-inline">
-                            <i class="fas fa-search"></i>
-                            <input type="text" class="form-control" placeholder="Search..." aria-label="Search">
-                        </div>
-                        
-                        <!-- Notification Bell -->
-                        <button class="icon-btn" data-feature="coming-soon" aria-label="Notifications">
-                            <i class="fas fa-bell"></i>
-                        </button>
-                    </div>
-                </div>
+{% block content %}
                 
                 <!-- Stats Cards Row -->
                 <div class="row g-3 mb-4">
@@ -163,8 +70,8 @@
                                 <div style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;">
                                     <i class="fas fa-user-plus"></i>
                                 </div>
-                                <p class="text-muted">Create new professor accounts</p>
-                                <a href="#" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 8px; font-weight: 600; text-decoration: none;" data-feature="in-progress">
+                                <p class="text-muted">Promote students to professor role</p>
+                                <a href="{% url 'accounts:promote_to_professor' %}" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 8px; font-weight: 600; text-decoration: none;">
                                     <i class="fas fa-plus"></i> Add Professor
                                 </a>
                             </div>
@@ -266,7 +173,9 @@
                                         <div style="flex: 1;">
                                             <div class="d-flex align-items-center gap-2 mb-1">
                                                 <strong style="color: #1a1a1a;">{{ user.get_display_name }}</strong>
-                                                {% if user.is_professor %}
+                                                {% if user.is_superuser or user.is_staff %}
+                                                    <span class="badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; font-size: 0.65rem;">Admin</span>
+                                                {% elif user.is_professor %}
                                                     <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 0.65rem;">Professor</span>
                                                 {% else %}
                                                     <span class="badge" style="background: rgba(108, 117, 125, 0.2); color: #6c757d; font-size: 0.65rem;">Student</span>
@@ -332,53 +241,32 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Toast Notification -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
-        <div id="featureToast" class="toast">
-            <div class="toast-header bg-info text-white">
-                <i class="fas fa-info-circle me-2"></i>
-                <strong class="me-auto">Feature Coming Soon</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body">This feature is currently under development and will be available soon!</div>
-        </div>
-    </div>
-    
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
-    <script src="{% static 'js/sidebar.js' %}?v=5.0"></script>
-    <script src="{% static 'js/script.js' %}?v=21.0"></script>
-    
-    <!-- Apply stat number animation -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const statNumbers = document.querySelectorAll('.stat-value');
+{% endblock %}
+
+{% block extra_js %}
+<!-- Apply stat number animation -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statNumbers = document.querySelectorAll('.stat-value');
+        
+        statNumbers.forEach(stat => {
+            const target = parseInt(stat.getAttribute('data-target')) || 0;
+            const duration = 1500;
+            const increment = target / (duration / 16);
+            let current = 0;
             
-            statNumbers.forEach(stat => {
-                const target = parseInt(stat.getAttribute('data-target')) || 0;
-                const duration = 1500;
-                const increment = target / (duration / 16);
-                let current = 0;
-                
-                const updateCount = () => {
-                    current += increment;
-                    if (current < target) {
-                        stat.textContent = Math.floor(current);
-                        requestAnimationFrame(updateCount);
-                    } else {
-                        stat.textContent = target;
-                    }
-                };
-                
-                updateCount();
-            });
+            const updateCount = () => {
+                current += increment;
+                if (current < target) {
+                    stat.textContent = Math.floor(current);
+                    requestAnimationFrame(updateCount);
+                } else {
+                    stat.textContent = target;
+                }
+            };
+            
+            updateCount();
         });
-    </script>
-</body>
-</html>
+    });
+</script>
+{% endblock %}

@@ -138,6 +138,84 @@ def professor_dashboard(request):
     return render(request, 'accounts/professor_dashboard.html', context)
 
 
+# Promote User to Professor
+@login_required
+def promote_to_professor(request):
+    """Admin view to promote students to professor role"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect(request.user.get_dashboard_url())
+    
+    # Get all students (non-professors, non-staff)
+    students = User.objects.filter(
+        is_professor=False,
+        is_staff=False,
+        is_superuser=False
+    ).order_by('last_name', 'first_name')
+    
+    # Get all current professors
+    current_professors = User.objects.filter(
+        is_professor=True,
+        is_staff=False,
+        is_superuser=False
+    ).order_by('last_name', 'first_name')
+    
+    context = {
+        'students': students,
+        'current_professors': current_professors,
+    }
+    return render(request, 'accounts/promote_to_professor.html', context)
+
+
+@login_required
+def promote_user_action(request, user_id):
+    """Action to promote a specific user to professor"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect(request.user.get_dashboard_url())
+    
+    try:
+        user = User.objects.get(id=user_id)
+        
+        # Check if user is already a professor
+        if user.is_professor:
+            messages.warning(request, f'{user.get_full_name()} is already a professor.')
+        else:
+            # Promote to professor
+            user.is_professor = True
+            user.save()
+            messages.success(request, f'{user.get_full_name()} has been promoted to Professor!')
+            messages.info(request, f'They can now access the Professor Dashboard.')
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+    
+    return redirect('accounts:promote_to_professor')
+
+
+@login_required
+def demote_professor_action(request, user_id):
+    """Action to demote a professor back to student"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect(request.user.get_dashboard_url())
+    
+    try:
+        user = User.objects.get(id=user_id)
+        
+        # Check if user is a professor
+        if not user.is_professor:
+            messages.warning(request, f'{user.get_full_name()} is not a professor.')
+        else:
+            # Demote to student
+            user.is_professor = False
+            user.save()
+            messages.success(request, f'{user.get_full_name()} has been demoted to Student.')
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+    
+    return redirect('accounts:promote_to_professor')
+
+
 # Admin Dashboard
 @login_required
 def admin_dashboard(request):

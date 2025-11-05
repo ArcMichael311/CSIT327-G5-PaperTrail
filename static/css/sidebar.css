@@ -613,3 +613,24 @@ body.sidebar-expanded .main-content-wrapper > .main-content {
     text-decoration: none !important;
     font-weight: 500 !important;
 }
+
+/* Coming Soon Badge */
+.nav-link .coming-soon-badge {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity var(--transition-speed) var(--transition-timing);
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(102, 126, 234, 0.2);
+    color: #667eea;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+.sidebar.expanded .nav-link .coming-soon-badge {
+    opacity: 1;
+    width: auto;
+}

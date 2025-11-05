@@ -1,0 +1,150 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Promote to Professor{% endblock %}
+
+{% block page_title %}Promote to Professor{% endblock %}
+
+{% block content %}
+<!-- Promote to Professor Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-graduate"></i> Student List
+                    </h5>
+                    <small class="text-muted">Select a student to promote to professor role</small>
+                </div>
+                <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+            <div class="card-body">
+                {% if students %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Student ID</th>
+                                    <th>Department</th>
+                                    <th>Role</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if student.profile_picture %}
+                                                <img src="{{ student.profile_picture.url }}" alt="Profile" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                            {% endif %}
+                                            <strong>{{ student.get_full_name }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>{{ student.email|default:student.univ_email|default:"No email" }}</td>
+                                    <td><code>{{ student.stud_id|default:"-" }}</code></td>
+                                    <td>{{ student.department|default:"-" }}</td>
+                                    <td>
+                                        <span class="badge" style="background: rgba(108, 117, 125, 0.2); color: #6c757d; font-size: 0.75rem;">
+                                            <i class="fas fa-user-graduate"></i> Student
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'accounts:promote_user' student.id %}" 
+                                           class="btn btn-sm" 
+                                           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;"
+                                           onclick="return confirm('Are you sure you want to promote {{ student.get_full_name }} to Professor?');">
+                                            <i class="fas fa-arrow-up"></i> Promote
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-slash" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+                        <p class="text-muted">No students available to promote.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Current Professors -->
+        <div class="card dashboard-card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chalkboard-teacher"></i> Current Professors
+                </h5>
+                <small class="text-muted">Users with professor role</small>
+            </div>
+            <div class="card-body">
+                {% if current_professors %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Professor ID</th>
+                                    <th>Department</th>
+                                    <th>Role</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for professor in current_professors %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if professor.profile_picture %}
+                                                <img src="{{ professor.profile_picture.url }}" alt="Profile" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                                    <i class="fas fa-chalkboard-teacher"></i>
+                                                </div>
+                                            {% endif %}
+                                            <strong>{{ professor.get_full_name }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>{{ professor.email|default:professor.univ_email|default:"No email" }}</td>
+                                    <td><code>{{ professor.stud_id|default:"-" }}</code></td>
+                                    <td>{{ professor.department|default:"-" }}</td>
+                                    <td>
+                                        <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 0.75rem;">
+                                            <i class="fas fa-chalkboard-teacher"></i> Professor
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'accounts:demote_professor' professor.id %}" 
+                                           class="btn btn-sm btn-outline-danger"
+                                           onclick="return confirm('Are you sure you want to demote {{ professor.get_full_name }} to Student?');">
+                                            <i class="fas fa-arrow-down"></i> Demote
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chalkboard-teacher" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+                        <p class="text-muted">No professors currently in the system.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

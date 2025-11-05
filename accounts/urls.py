@@ -16,6 +16,11 @@ urlpatterns = [
     path('dashboard/professor/', views.professor_dashboard, name='professor_dashboard'),
     path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
     
+    # Admin Actions
+    path('admin/promote-to-professor/', views.promote_to_professor, name='promote_to_professor'),
+    path('admin/promote-user/<int:user_id>/', views.promote_user_action, name='promote_user'),
+    path('admin/demote-professor/<int:user_id>/', views.demote_professor_action, name='demote_professor'),
+    
     # Profile
     path('profile/', views.profile, name='profile'),
     path('settings/', views.settings_view, name='settings'),
