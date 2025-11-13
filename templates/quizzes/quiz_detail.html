@@ -5,74 +5,279 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/quizzes.css' %}?v=1.0">
+<style>
+    .quiz-detail-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+    
+    .quiz-detail-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .quiz-detail-header p {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+    
+    .quiz-info-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    
+    .quiz-info-header {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+        border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+        padding: 1.5rem;
+    }
+    
+    .quiz-info-body {
+        padding: 2rem;
+    }
+    
+    .quiz-description {
+        font-size: 1.05rem;
+        color: #4b5563;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+    
+    .quiz-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding: 1.5rem 0;
+        border-top: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .stat-box {
+        text-align: center;
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+    
+    .quiz-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .previous-attempt-alert {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+        border: 2px solid #3b82f6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .previous-attempt-alert strong {
+        color: #1e40af;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .previous-attempt-alert .score {
+        font-size: 1.25rem;
+        color: #1e40af;
+        margin-bottom: 0.5rem;
+    }
+    
+    .start-quiz-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+    
+    .start-quiz-button:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 24px rgba(102, 126, 234, 0.3);
+        text-decoration: none;
+        color: white;
+    }
+    
+    .quick-actions-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        position: sticky;
+        top: 2rem;
+    }
+    
+    .quick-actions-header {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+        border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+        padding: 1.5rem;
+    }
+    
+    .quick-actions-body {
+        padding: 1.5rem;
+    }
+    
+    .quick-action-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #4b5563;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        margin-bottom: 0.75rem;
+    }
+    
+    .quick-action-btn:hover {
+        border-color: #667eea;
+        color: #667eea;
+        background: #f9fafb;
+    }
+    
+    .quick-action-btn:last-child {
+        margin-bottom: 0;
+    }
+</style>
 {% endblock %}
 
 {% block header %}
-<div class="dashboard-header">
-    <div class="dashboard-title-section">
-        <h1 class="dashboard-title">{{ quiz.title }}</h1>
-        <p class="dashboard-date">Created by {{ quiz.creator.get_display_name }}</p>
-    </div>
-    <div class="dashboard-actions">
-        <a href="{% url 'quizzes:quiz_list' %}" class="btn btn-outline-primary-soft">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-        <button class="icon-btn" data-feature="coming-soon" aria-label="Notifications">
-            <i class="fas fa-bell"></i>
-        </button>
-    </div>
+<div class="quiz-detail-header">
+    <h1>{{ quiz.title }}</h1>
+    <p><i class="fas fa-user-circle"></i> Created by <strong>{{ quiz.creator.get_display_name }}</strong></p>
 </div>
 {% endblock %}
 
 {% block content %}
+<a href="{% url 'quizzes:quiz_list' %}" class="btn" style="background: white; border: 2px solid #e5e7eb; color: #4b5563; padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 2rem; text-decoration: none;">
+    <i class="fas fa-arrow-left"></i> Back to Quizzes
+</a>
+
 <div class="row">
     <div class="col-lg-8">
-        <div class="card dashboard-card mb-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0"><i class="fas fa-info-circle"></i> Quiz Information</h5>
+        <div class="quiz-info-card">
+            <div class="quiz-info-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle" style="color: #667eea;"></i> About This Quiz</h5>
             </div>
-            <div class="card-body">
+            <div class="quiz-info-body">
                 {% if quiz.description %}
-                <p class="mb-3">{{ quiz.description }}</p>
+                <div class="quiz-description">
+                    {{ quiz.description }}
+                </div>
                 {% endif %}
-                <div class="d-flex gap-4 mb-3">
-                    <div>
-                        <i class="fas fa-question-circle text-primary"></i>
-                        <strong>{{ quiz.total_questions }}</strong> questions
+                
+                <div class="quiz-stats">
+                    <div class="stat-box">
+                        <span class="stat-icon" style="color: #667eea;">
+                            <i class="fas fa-question-circle"></i>
+                        </span>
+                        <div class="stat-value">{{ quiz.total_questions }}</div>
+                        <div class="stat-label">Questions</div>
                     </div>
-                    <div>
-                        <i class="fas fa-users text-success"></i>
-                        <strong>{{ quiz.attempts_count }}</strong> attempts
+                    <div class="stat-box">
+                        <span class="stat-icon" style="color: #10b981;">
+                            <i class="fas fa-users"></i>
+                        </span>
+                        <div class="stat-value">{{ quiz.attempts_count|default:0 }}</div>
+                        <div class="stat-label">Attempts</div>
                     </div>
-                    <div>
-                        <i class="fas fa-check-circle text-success"></i>
-                        <span class="badge bg-success">Verified</span>
+                    <div class="stat-box">
+                        <span class="stat-icon" style="color: #f59e0b;">
+                            <i class="fas fa-clock"></i>
+                        </span>
+                        <div class="stat-value">{{ quiz.duration_minutes|default:"30" }}</div>
+                        <div class="stat-label">Minutes</div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-icon" style="color: #10b981;">
+                            <i class="fas fa-shield-alt"></i>
+                        </span>
+                        <div class="stat-value">
+                            <span class="quiz-badge">
+                                <i class="fas fa-check"></i> Verified
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 {% if has_attempted %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> You've already attempted this quiz.
+                <div class="previous-attempt-alert">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>You've already attempted this quiz</strong>
                     {% if best_attempt %}
-                    Your best score: <strong>{{ best_attempt.score }}/{{ best_attempt.total_questions }}</strong> ({{ best_attempt.percentage }}%)
+                    <div class="score">
+                        Best Score: <strong>{{ best_attempt.score }}/{{ best_attempt.total_questions }}</strong> 
+                        <span style="font-size: 1rem; color: #6b7280;">({{ best_attempt.percentage }}%)</span>
+                    </div>
                     {% endif %}
                 </div>
                 {% endif %}
 
-                <a href="{% url 'quizzes:quiz_attempt' quiz.pk %}" class="btn w-100 btn-gradient-primary fw-semibold py-2">
-                    <i class="fas fa-play"></i> Start Quiz
+                <a href="{% url 'quizzes:quiz_attempt' quiz.pk %}" class="start-quiz-button">
+                    <i class="fas fa-play-circle"></i> Start Quiz
                 </a>
             </div>
         </div>
     </div>
+    
     <div class="col-lg-4">
-        <div class="card dashboard-card">
-            <div class="card-header">
-                <h5 class="card-title mb-0"><i class="fas fa-list"></i> Quick Actions</h5>
+        <div class="quick-actions-card">
+            <div class="quick-actions-header">
+                <h5 class="mb-0"><i class="fas fa-bolt" style="color: #667eea;"></i> Quick Actions</h5>
             </div>
-            <div class="card-body">
-                <a href="{% url 'quizzes:quiz_history' %}" class="btn w-100 mb-2 btn-outline-primary-soft">
+            <div class="quick-actions-body">
+                <a href="{% url 'quizzes:quiz_history' %}" class="quick-action-btn">
                     <i class="fas fa-history"></i> View My Results
+                </a>
+                <a href="{% url 'quizzes:quiz_list' %}" class="quick-action-btn">
+                    <i class="fas fa-list"></i> All Quizzes
                 </a>
             </div>
         </div>

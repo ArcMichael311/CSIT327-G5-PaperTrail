@@ -5,6 +5,163 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/quizzes.css' %}?v=1.0">
+<style>
+    .quiz-card {
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .quiz-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    .quiz-card-header {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+        padding: 1.5rem;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+    }
+    
+    .quiz-card-body {
+        padding: 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .quiz-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+    }
+    
+    .quiz-verified-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .quiz-description {
+        color: #6b7280;
+        font-size: 0.95rem;
+        margin: 1rem 0;
+        flex-grow: 1;
+        line-height: 1.5;
+    }
+    
+    .quiz-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 1.5rem 0;
+        padding: 1rem 0;
+        border-top: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .quiz-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+    
+    .quiz-meta-item strong {
+        color: #1a1a1a;
+        font-weight: 600;
+    }
+    
+    .quiz-creator {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+    }
+    
+    .quiz-creator-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    
+    .start-quiz-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .start-quiz-btn:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        text-decoration: none;
+        color: white;
+    }
+    
+    .start-quiz-btn:active {
+        transform: translateY(0);
+    }
+    
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 2rem;
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        color: #d1d5db;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-description {
+        color: #9ca3af;
+        margin-bottom: 1.5rem;
+    }
+</style>
 {% endblock %}
 
 {% block header %}
@@ -43,29 +200,47 @@
                     {% endfor %}
                 {% endif %}
 
-                <div class="row g-3">
+                <div class="row g-4">
                     {% if quizzes %}
                         {% for quiz in quizzes %}
                         <div class="col-md-6 col-lg-4">
-                            <div class="card dashboard-card">
-                                <div class="card-body">
+                            <div class="card quiz-card">
+                                <div class="quiz-card-header">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <h5 class="card-title mb-0">{{ quiz.title }}</h5>
-                                        <span class="badge bg-success">Verified</span>
+                                        <h5 class="quiz-title mb-0">{{ quiz.title }}</h5>
+                                        <span class="quiz-verified-badge">
+                                            <i class="fas fa-shield-alt"></i> Verified
+                                        </span>
                                     </div>
+                                </div>
+                                
+                                <div class="quiz-card-body">
                                     {% if quiz.description %}
-                                    <p class="text-muted small mb-2">{{ quiz.description|truncatewords:15 }}</p>
+                                    <p class="quiz-description">{{ quiz.description|truncatewords:20 }}</p>
                                     {% endif %}
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <small class="text-muted">
-                                            <i class="fas fa-question-circle"></i> {{ quiz.total_questions }} questions
-                                        </small>
-                                        <small class="text-muted">
-                                            <i class="fas fa-user"></i> {{ quiz.creator.get_display_name }}
-                                        </small>
+                                    
+                                    <div class="quiz-meta">
+                                        <div class="quiz-meta-item">
+                                            <i class="fas fa-question-circle" style="color: #667eea;"></i>
+                                            <span><strong>{{ quiz.total_questions }}</strong> questions</span>
+                                        </div>
+                                        <div class="quiz-meta-item">
+                                            <i class="fas fa-clock" style="color: #f59e0b;"></i>
+                                            <span><strong>{{ quiz.duration_minutes|default:"30" }}</strong> min</span>
+                                        </div>
                                     </div>
-                                    <a href="{% url 'quizzes:quiz_detail' quiz.pk %}" class="btn btn-sm w-100 btn-gradient-primary">
-                                        <i class="fas fa-play"></i> Start Quiz
+                                    
+                                    <div class="quiz-creator">
+                                        <div class="quiz-creator-avatar">
+                                            {{ quiz.creator.get_display_name|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 0.85rem;">By <strong>{{ quiz.creator.get_display_name }}</strong></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <a href="{% url 'quizzes:quiz_detail' quiz.pk %}" class="start-quiz-btn">
+                                        <i class="fas fa-play-circle"></i> Start Quiz
                                     </a>
                                 </div>
                             </div>
@@ -74,11 +249,11 @@
                     {% else %}
                         <div class="col-12">
                             <div class="card dashboard-card">
-                                <div class="card-body text-center py-5">
-                                    <i class="fas fa-clipboard-list empty-icon mb-3"></i>
-                                    <h5 class="text-muted">No quizzes available yet</h5>
-                                    <p class="text-muted">Be the first to create a quiz!</p>
-                                    <a href="{% url 'quizzes:quiz_create' %}" class="btn btn-gradient-primary">
+                                <div class="empty-state">
+                                    <i class="fas fa-clipboard-list empty-icon"></i>
+                                    <h5 class="empty-title">No quizzes available yet</h5>
+                                    <p class="empty-description">Be the first to create a quiz and share knowledge!</p>
+                                    <a href="{% url 'quizzes:quiz_create' %}" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.75rem 2rem; border-radius: 8px; font-weight: 600;">
                                         <i class="fas fa-plus"></i> Create Quiz
                                     </a>
                                 </div>

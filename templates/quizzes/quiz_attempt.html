@@ -5,66 +5,279 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/quizzes.css' %}">
+<style>
+    .quiz-header-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+    
+    .quiz-progress-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+    
+    .progress-stats {
+        display: flex;
+        gap: 2rem;
+    }
+    
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .stat-item strong {
+        font-size: 1.25rem;
+    }
+    
+    .progress-container {
+        flex: 1;
+    }
+    
+    .progress-container .progress {
+        height: 10px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-container .progress-bar {
+        background: linear-gradient(90deg, #4ade80 0%, #22c55e 100%);
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+    
+    .question-card {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        margin-bottom: 2rem;
+    }
+    
+    .question-card .card-header {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+        padding: 1.5rem;
+    }
+    
+    .question-card .card-body {
+        padding: 2rem;
+    }
+    
+    .question-text {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .multiple-choice-options {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .mc-option {
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #f9fafb;
+    }
+    
+    .mc-option:hover {
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    }
+    
+    .mc-option input[type="radio"]:checked + label {
+        color: #667eea;
+        font-weight: 600;
+    }
+    
+    .mc-option input[type="radio"]:checked ~ * {
+        color: #667eea;
+    }
+    
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .form-check-label {
+        cursor: pointer;
+        font-weight: 500;
+        color: #4b5563;
+    }
+    
+    .fill-in-blank input {
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .fill-in-blank input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .btn-cancel {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #4b5563;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-cancel:hover {
+        border-color: #667eea;
+        color: #667eea;
+        background: #f9fafb;
+    }
+    
+    .btn-next {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-next:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+    
+    .btn-submit:hover {
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/quizzes.js' %}"></script>
-{% endblock %}
-
-{% block header %}
-<div class="dashboard-title-section">
-    <h1 class="dashboard-title">{{ quiz.title }}</h1>
-    <p class="dashboard-date">Question {{ question_number }} of {{ total_questions }}</p>
-    <div class="d-flex align-items-center gap-2">
-        <div class="progress" style="width: 200px; height: 8px;">
-            <div class="progress-bar" role="progressbar" data-width="{{ progress_percentage }}" aria-valuenow="{{ question_number }}" aria-valuemin="0" aria-valuemax="{{ total_questions }}"></div>
-        </div>
-    </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBar = document.querySelector('.progress-bar');
+        if (progressBar) {
+            const width = progressBar.getAttribute('data-width');
+            progressBar.style.width = width + '%';
+        }
+    });
+</script>
 {% endblock %}
 
 {% block content %}
+<!-- Quiz Header -->
+<div class="quiz-header-card">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <h1 class="mb-2" style="font-size: 2rem; margin: 0;">{{ quiz.title }}</h1>
+            <p class="mb-0 opacity-90">Question {{ question_number }} of {{ total_questions }}</p>
+        </div>
+        <a href="{% url 'quizzes:quiz_detail' quiz.pk %}" class="btn" style="background: rgba(255, 255, 255, 0.2); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px;">
+            <i class="fas fa-times"></i> Exit
+        </a>
+    </div>
+    
+    <div class="quiz-progress-section">
+        <div class="progress-stats">
+            <div class="stat-item">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <small>Progress</small>
+                    <strong>{{ question_number }}/{{ total_questions }}</strong>
+                </div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-percent"></i>
+                <div>
+                    <small>Completion</small>
+                    <strong>{{ progress_percentage|floatformat:0 }}%</strong>
+                </div>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" data-width="{{ progress_percentage|floatformat:0 }}" aria-valuenow="{{ question_number }}" aria-valuemin="0" aria-valuemax="{{ total_questions }}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Question Card -->
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <div class="card dashboard-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card question-card dashboard-card">
+            <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-question-circle"></i> Question {{ question_number }}
+                    <i class="fas fa-lightbulb"></i> Question {{ question_number }} of {{ total_questions }}
                 </h5>
             </div>
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
 
-                    <div class="mb-4">
-                        <h4 class="mb-3">{{ question.question_text }}</h4>
-
-                        {% if question.question_type == 'multiple_choice' %}
-                            <div class="multiple-choice-options">
-                                {% for option in question.options.all %}
-                                <div class="form-check mb-3 p-3 mc-option">
-                                    <input class="form-check-input" type="radio" name="answer" id="option_{{ option.id }}" value="{{ option.id }}" required>
-                                    <label class="form-check-label w-100" for="option_{{ option.id }}">
-                                        {{ option.option_text }}
-                                    </label>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="fill-in-blank">
-                                {{ form.answer }}
-                            </div>
-                        {% endif %}
+                    <div class="question-text">
+                        {{ question.question_text }}
                     </div>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'quizzes:quiz_detail' quiz.pk %}" class="btn btn-outline-primary-soft">
-                            <i class="fas fa-times"></i> Cancel
+                    {% if question.question_type == 'multiple_choice' %}
+                        <div class="multiple-choice-options">
+                            {% for option in question.options.all %}
+                            <div class="form-check mc-option">
+                                <input class="form-check-input" type="radio" name="answer" id="option_{{ option.id }}" value="{{ option.id }}" required>
+                                <label class="form-check-label w-100" for="option_{{ option.id }}">
+                                    <i class="fas fa-circle me-2"></i>{{ option.option_text }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="fill-in-blank">
+                            {{ form.answer }}
+                        </div>
+                    {% endif %}
+
+                    <div class="action-buttons">
+                        <a href="{% url 'quizzes:quiz_detail' quiz.pk %}" class="btn btn-cancel">
+                            <i class="fas fa-arrow-left"></i> Back
                         </a>
-                        <button type="submit" class="btn btn-gradient-primary">
+                        <button type="submit" class="btn btn-next {% if question_number == total_questions %}btn-submit{% endif %}">
                             {% if question_number == total_questions %}
-                                <i class="fas fa-check"></i> Submit Quiz
+                                <i class="fas fa-check-circle"></i> Submit Quiz
                             {% else %}
-                                <i class="fas fa-arrow-right"></i> Next Question
+                                Next Question <i class="fas fa-arrow-right"></i>
                             {% endif %}
                         </button>
                     </div>
