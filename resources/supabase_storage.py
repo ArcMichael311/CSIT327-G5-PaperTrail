@@ -15,6 +15,12 @@ class SupabaseStorage:
     
     def __init__(self):
         """Initialize Supabase client"""
+        # Check if Supabase credentials are configured
+        if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_KEY:
+            self.supabase = None
+            self.bucket_name = None
+            return
+        
         self.supabase: Client = create_client(
             settings.SUPABASE_URL,
             settings.SUPABASE_SERVICE_KEY
@@ -32,6 +38,9 @@ class SupabaseStorage:
         Returns:
             Tuple of (success: bool, file_url: str or None, error_message: str or None)
         """
+        if not self.supabase:
+            return False, None, "Supabase is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY."
+        
         try:
             # Generate unique filename
             file_extension = os.path.splitext(file.name)[1]
@@ -71,6 +80,9 @@ class SupabaseStorage:
         Returns:
             Tuple of (success: bool, error_message: str or None)
         """
+        if not self.supabase:
+            return False, "Supabase is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY."
+        
         try:
             # Extract path from URL if full URL is provided
             if file_path.startswith('http'):
@@ -95,6 +107,10 @@ class SupabaseStorage:
         Returns:
             Dictionary with file info or None
         """
+        if not self.supabase:
+            print("Supabase is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY.")
+            return None
+        
         try:
             files = self.supabase.storage.from_(self.bucket_name).list(path=file_path)
             if files and len(files) > 0:
@@ -114,6 +130,10 @@ class SupabaseStorage:
         Returns:
             List of file information dictionaries
         """
+        if not self.supabase:
+            print("Supabase is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY.")
+            return []
+        
         try:
             files = self.supabase.storage.from_(self.bucket_name).list(path=folder)
             return files
