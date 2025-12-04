@@ -1,0 +1,245 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ deck.title }}{% endblock %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/resources.css' %}?v=1.1">{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/flashcard_detail.js' %}?v=1.0"></script>
+{% endblock %}
+
+{% block header %}
+{% url 'flashcards:deck_list' as decks_url %}
+{% include 'components/page_header.html' with page_title='Flashcard Detail' back_url=decks_url show_moderate_btn=False %}
+{% endblock %}
+
+{% block content %}
+<div class="resource-detail-container" data-deck-id="{{ deck.pk }}">
+  
+  <!-- Flashcard Detail Grid Layout (4 boxes) -->
+  <div class="resource-detail-grid-4">
+    
+    <!-- Top Left: Title, Description, Category -->
+    <div class="grid-item grid-resource-header">
+      <div class="resource-info-card">
+        <div class="resource-header-badges">
+          <span class="resource-type-badge">FLASHCARD DECK</span>
+          {% if deck.visibility == 'public' %}
+            {% if deck.verification_status == 'verified' %}
+              <span class="badge badge-verified badge-sm"><i class="fas fa-check-circle"></i> Verified</span>
+            {% else %}
+              <span class="badge badge-pending badge-sm"><i class="fas fa-clock"></i> Pending</span>
+            {% endif %}
+          {% else %}
+            <span class="badge bg-secondary badge-sm"><i class="fas fa-lock"></i> Private</span>
+          {% endif %}
+        </div>
+        <h1 class="resource-title">{{ deck.title }}</h1>
+        {% if deck.description %}
+          <p class="resource-description">{{ deck.description }}</p>
+        {% endif %}
+        <div class="mt-2">
+          <span class="text-muted"><i class="fas fa-folder"></i> {{ deck.get_category_display }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Right: Uploader Profile -->
+    <div class="grid-item grid-resource-uploader">
+      <div class="uploader-card">
+        <h3 class="uploader-card-title">Created by</h3>
+        <a href="{% url 'accounts:public_profile' deck.owner.username %}" class="uploader-profile-link">
+          {% if deck.owner.profile_picture %}
+            <img src="{{ deck.owner.profile_picture.url }}" class="uploader-avatar" alt="{{ deck.owner.get_full_name }}">
+          {% else %}
+            <img src="https://ui-avatars.com/api/?name={{ deck.owner.first_name }}+{{ deck.owner.last_name }}&size=48&background=1f2937&color=fff" 
+                 class="uploader-avatar" alt="{{ deck.owner.get_full_name }}">
+          {% endif %}
+          <span class="uploader-name">{{ deck.owner.get_full_name|default:deck.owner.username }}</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Bottom Left: Stats -->
+    <div class="grid-item grid-resource-stats">
+      <div class="stats-card">
+        <div class="stat-row">
+          <span class="stat-label">Cards</span>
+          <span class="stat-value">{{ deck.cards_count }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Rating</span>
+          <span class="stat-value">{{ deck.get_average_rating|floatformat:1|default:"0.0" }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Likes</span>
+          <span class="stat-value" id="likesStatValue">{{ deck.likes.count|default:0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Created</span>
+          <span class="stat-value">{{ deck.created_at|date:"M d, Y" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Right: Actions -->
+    <div class="grid-item grid-resource-actions">
+      <div class="actions-card">
+        <h3 class="actions-title">Actions</h3>
+        <div class="actions-list">
+          
+          <!-- Study Button (for both owner and non-owner) -->
+          {% if deck.cards_count > 0 %}
+            <a href="{% url 'flashcards:study' deck.pk %}" class="action-btn action-btn-primary">
+              <i class="fas fa-play"></i>
+              <span>Study</span>
+            </a>
+          {% else %}
+            <button type="button" class="action-btn action-btn-primary" disabled title="No cards to study">
+              <i class="fas fa-play"></i>
+              <span>Study</span>
+            </button>
+          {% endif %}
+
+          <!-- Add Card Button (owner only) -->
+          {% if user == deck.owner %}
+            <button type="button" class="action-btn action-btn-secondary" data-bs-toggle="modal" data-bs-target="#addCardModal">
+              <i class="fas fa-plus"></i>
+              <span>Add Card</span>
+            </button>
+          {% endif %}
+
+          <!-- Preview Cards Button -->
+          <button type="button" class="action-btn action-btn-secondary" data-bs-toggle="modal" data-bs-target="#previewCardsModal">
+            <i class="fas fa-eye"></i>
+            <span>Preview Cards</span>
+          </button>
+
+          {% if user.is_authenticated %}
+            {% if user == deck.owner %}
+              {# Owner actions: Edit #}
+              <a href="{% url 'flashcards:deck_edit' deck.pk %}" class="action-btn action-btn-edit">
+                <i class="fas fa-edit"></i>
+                <span>Edit</span>
+              </a>
+            {% else %}
+              {# Non-owner actions: Rate & Like #}
+              <button type="button" class="action-btn action-btn-rating" data-bs-toggle="modal" data-bs-target="#ratingModal">
+                <i class="fas fa-star"></i>
+                <span>Rate Deck</span>
+              </button>
+              
+              <button type="button" class="action-btn action-btn-like" id="likeBtn" data-liked="false">
+                <i class="far fa-heart"></i>
+                <span>Like</span>
+              </button>
+            {% endif %}
+
+            {# Bookmark button for all users #}
+            <form method="post" action="{% url 'flashcards:bookmark_toggle' deck.pk %}" class="w-100">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="action-btn action-btn-bookmark">
+                {% if is_bookmarked %}
+                  <i class="fas fa-bookmark"></i>
+                  <span>Bookmarked</span>
+                {% else %}
+                  <i class="far fa-bookmark"></i>
+                  <span>Bookmark</span>
+                {% endif %}
+              </button>
+            </form>
+          {% endif %}
+          
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Comment Section -->
+  {% include 'components/comment_section.html' with comments=comments user=user comment_url=comment_url delete_url_name='flashcards:delete_deck_comment' current_user=user %}
+
+</div>
+
+<!-- Add Card Modal -->
+<div class="modal fade" id="addCardModal" tabindex="-1" aria-labelledby="addCardModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addCardModalLabel">Add New Card</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" id="addCardForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="frontText" class="form-label">Front Text</label>
+            <textarea class="form-control" id="frontText" name="front_text" rows="3" placeholder="Enter the question or prompt..." required></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="backText" class="form-label">Back Text</label>
+            <textarea class="form-control" id="backText" name="back_text" rows="3" placeholder="Enter the answer..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Card
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Cards Modal -->
+<div class="modal fade" id="previewCardsModal" tabindex="-1" aria-labelledby="previewCardsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewCardsModalLabel">Preview Cards ({{ deck.cards_count }})</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+        {% if cards %}
+          <div class="list-group">
+            {% for card in cards %}
+              <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <strong class="text-primary">Card {{ forloop.counter }}</strong>
+                  {% if user == deck.owner %}
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-card-btn" 
+                            data-card-id="{{ card.pk }}" 
+                            data-delete-url="{% url 'flashcards:card_delete' deck.pk card.pk %}">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  {% endif %}
+                </div>
+                <div class="mb-2">
+                  <small class="text-muted d-block mb-1"><strong>Front:</strong></small>
+                  <p class="mb-0">{{ card.front_text }}</p>
+                </div>
+                <div>
+                  <small class="text-muted d-block mb-1"><strong>Back:</strong></small>
+                  <p class="mb-0">{{ card.back_text }}</p>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted text-center mb-0">No cards in this deck yet.</p>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rating Modal -->
+{% include 'components/rating_modal.html' with rate_url=rate_url modal_id='ratingModal' item_type='Deck' %}
+
+{% endblock %}

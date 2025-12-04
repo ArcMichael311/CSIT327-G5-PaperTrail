@@ -1,209 +1,359 @@
 {% extends 'base_dashboard.html' %}
-{% load static humanize %}
+{% load static %}
+
 {% block title %}{{ deck.title }}{% endblock %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/resources.css' %}?v=1.1">{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/flashcard_detail.js' %}?v=1.0"></script>
+{% endblock %}
 
 {% block header %}
 {% url 'flashcards:deck_list' as decks_url %}
 {% include 'components/page_header.html' with page_title='Flashcard Detail' back_url=decks_url show_moderate_btn=False %}
 {% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/flashcards.css' %}?v=1.2">
-<link rel="stylesheet" href="{% static 'css/resources.css' %}?v=1.0">
-{% endblock %}
-
 {% block content %}
-<div class="fc-container fc-tight-top">
-    <div class="deck-detail-card">
-        <!-- Header with title, badges and actions -->
-        <div class="deck-detail-card__header">
-            <div class="deck-detail-card__title">
-                <h1 id="deckTitleDisplay">{{ deck.title }}</h1>
-                <!-- Inline Title Input -->
-                <div class="d-none mb-2" id="deckTitleEditContainer" style="flex-grow: 1; max-width: 600px;">
-                    <div class="input-group">
-                        <input type="text" class="form-control form-control-lg" id="deckTitleInput" value="{{ deck.title }}" style="font-weight: 700; font-size: 2rem;">
-                        <button class="btn btn--primary" id="saveDeckTitleBtn" data-update-url="{% url 'flashcards:update_deck_title' deck.pk %}"><i class="fas fa-check"></i></button>
-                        <button class="btn btn-secondary" id="cancelDeckTitleBtn"><i class="fas fa-times"></i></button>
-                    </div>
-                </div>
+<div class="resource-detail-container" data-deck-id="{{ deck.pk }}">
+  
+  <!-- Flashcard Detail Grid Layout (4 boxes) -->
+  <div class="resource-detail-grid-4">
+    
+    <!-- Top Left: Title, Description, Category -->
+    <div class="grid-item grid-resource-header">
+      <div class="resource-info-card">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="resource-header-badges">
+            <span class="resource-type-badge">FLASHCARD DECK</span>
+            {% if deck.visibility == 'public' %}
+              {% if deck.verification_status == 'verified' %}
+                <span class="badge badge-verified badge-sm"><i class="fas fa-check-circle"></i> Verified</span>
+              {% else %}
+                <span class="badge badge-pending badge-sm"><i class="fas fa-clock"></i> Pending</span>
+              {% endif %}
+            {% else %}
+              <span class="badge bg-secondary badge-sm"><i class="fas fa-lock"></i> Private</span>
+            {% endif %}
+          </div>
+          <div>
+            <span class="text-muted"><i class="fas fa-folder"></i> {{ deck.get_category_display }}</span>
+          </div>
+        </div>
+        <h1 class="resource-title">{{ deck.title }}</h1>
+        {% if deck.description %}
+          <p class="resource-description">{{ deck.description }}</p>
+        {% endif %}
+      </div>
+    </div>
 
-                <div class="deck-detail-card__badges">
-                    {% if deck.visibility == 'public' %}
-                        {% if deck.verification_status == 'verified' %}
-                            <span class="badge badge-verified badge-sm"><i class="fas fa-check-circle"></i> Verified</span>
-                        {% else %}
-                            <span class="badge badge-pending badge-sm"><i class="fas fa-clock"></i> Pending</span>
-                        {% endif %}
-                    {% else %}
-                        <span class="badge bg-secondary badge-sm"><i class="fas fa-lock"></i> Private</span>
-                    {% endif %}
-                </div>
-            </div>
+    <!-- Top Right: Uploader Profile -->
+    <div class="grid-item grid-resource-uploader">
+      <div class="uploader-card">
+        <h3 class="uploader-card-title">Created by</h3>
+        <a href="{% url 'accounts:public_profile' deck.owner.username %}" class="uploader-profile-link">
+          {% if deck.owner.profile_picture %}
+            <img src="{{ deck.owner.profile_picture.url }}" class="uploader-avatar" alt="{{ deck.owner.get_full_name }}">
+          {% else %}
+            <img src="https://ui-avatars.com/api/?name={{ deck.owner.first_name }}+{{ deck.owner.last_name }}&size=48&background=1f2937&color=fff" 
+                 class="uploader-avatar" alt="{{ deck.owner.get_full_name }}">
+          {% endif %}
+          <span class="uploader-name">{{ deck.owner.get_full_name|default:deck.owner.username }}</span>
+        </a>
+      </div>
+    </div>
 
-            <!-- Action buttons -->
-            <div class="deck-detail-card__actions" id="deckActions">
-                {% if deck.cards_count > 0 %}
-                    <a href="{% url 'flashcards:study' deck.pk %}" class="fc-btn fc-btn-primary" title="Study deck"><i class="fas fa-play"></i><span> Study</span></a>
+    <!-- Bottom Left: Stats -->
+    <div class="grid-item grid-resource-stats">
+      <div class="stats-card">
+        <div class="stat-row">
+          <span class="stat-label">Cards</span>
+          <span class="stat-value">{{ deck.cards_count }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Rating</span>
+          <span class="stat-value">{{ deck.get_average_rating|floatformat:1|default:"0.0" }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Likes</span>
+          <span class="stat-value" id="likesStatValue">{{ deck.likes.count|default:0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Created</span>
+          <span class="stat-value">{{ deck.created_at|date:"M d, Y" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Right: Actions -->
+    <div class="grid-item grid-resource-actions">
+      <div class="actions-card">
+        <h3 class="actions-title">Actions</h3>
+        <div class="actions-list">
+          
+          <!-- Study Button (for both owner and non-owner) -->
+          {% if deck.cards_count > 0 %}
+            <a href="{% url 'flashcards:study' deck.pk %}" class="action-btn action-btn-primary">
+              <i class="fas fa-play"></i>
+              <span>Study</span>
+            </a>
+          {% else %}
+            <button type="button" class="action-btn action-btn-primary" disabled title="No cards to study">
+              <i class="fas fa-play"></i>
+              <span>Study</span>
+            </button>
+          {% endif %}
+
+          <!-- Add Card Button (owner only) -->
+          {% if user == deck.owner %}
+            <button type="button" class="action-btn action-btn-secondary" data-bs-toggle="modal" data-bs-target="#addCardModal">
+              <i class="fas fa-plus"></i>
+              <span>Add Card</span>
+            </button>
+          {% endif %}
+
+          <!-- Preview Cards Button -->
+          <button type="button" class="action-btn action-btn-secondary" data-bs-toggle="modal" data-bs-target="#previewCardsModal">
+            <i class="fas fa-eye"></i>
+            <span>Preview Cards</span>
+          </button>
+
+          {% if user.is_authenticated %}
+            {% if user == deck.owner %}
+              {# Owner actions: Edit #}
+              <button type="button" class="action-btn action-btn-edit" data-bs-toggle="modal" data-bs-target="#editDeckModal">
+                <i class="fas fa-edit"></i>
+                <span>Edit</span>
+              </button>
+            {% else %}
+              {# Non-owner actions: Rate & Like #}
+              <button type="button" class="action-btn action-btn-rating" data-bs-toggle="modal" data-bs-target="#ratingModal">
+                <i class="fas fa-star"></i>
+                <span>Rate Deck</span>
+              </button>
+              
+              <button type="button" class="action-btn action-btn-like" id="likeBtn" 
+                      data-liked="{% if user_has_liked %}true{% else %}false{% endif %}"
+                      data-like-url="{% url 'flashcards:like_toggle' deck.pk %}">
+                {% if user_has_liked %}
+                  <i class="fas fa-heart"></i>
+                  <span>Liked</span>
                 {% else %}
-                    <button type="button" class="fc-btn fc-btn-primary" id="emptyDeckStudyBtn" title="Study deck"><i class="fas fa-play"></i><span> Study</span></button>
+                  <i class="far fa-heart"></i>
+                  <span>Like</span>
                 {% endif %}
-                <form method="post" action="{% url 'flashcards:bookmark_toggle' deck.pk %}" class="bookmark-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                    <button type="submit" class="fc-icon-btn-round" title="Bookmark Deck">{% if is_bookmarked %}<i class="fas fa-bookmark"></i>{% else %}<i class="far fa-bookmark"></i>{% endif %}</button>
-                </form>
-                {% if user == deck.owner %}
-                <button type="button" class="fc-icon-btn-round" id="editDeckTitleBtn" title="Edit Title"><i class="fas fa-edit"></i></button>
+              </button>
+            {% endif %}
+
+            {# Bookmark button for all users #}
+            <form method="post" action="{% url 'flashcards:bookmark_toggle' deck.pk %}" class="w-100">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="action-btn action-btn-bookmark">
+                {% if is_bookmarked %}
+                  <i class="fas fa-bookmark"></i>
+                  <span>Bookmarked</span>
+                {% else %}
+                  <i class="far fa-bookmark"></i>
+                  <span>Bookmark</span>
                 {% endif %}
-                <a href="{% url 'flashcards:deck_edit' deck.pk %}" class="fc-icon-btn-round" title="Edit Settings"><i class="fas fa-cog"></i></a>
-                <button type="button" class="fc-icon-btn-round delete-deck-btn" title="Delete Deck" data-deck-id="{{ deck.pk }}" data-deck-title="{{ deck.title|escapejs }}" data-delete-url="{% url 'flashcards:deck_delete' deck.pk %}"><i class="fas fa-trash"></i></button>
-            </div>
+              </button>
+            </form>
+          {% endif %}
+          
         </div>
-
-        <!-- Meta information -->
-        <div class="deck-detail-card__meta">
-            <i class="fas fa-folder"></i> {{ deck.get_category_display }}
-            <span class="meta-separator">•</span>
-            <i class="fas fa-clone"></i> {{ deck.cards_count }} card{% if deck.cards_count != 1 %}s{% endif %}
-            <span class="meta-separator">•</span>
-            {% if deck.last_studied_at %}
-                <i class="fas fa-history"></i> Last studied {{ deck.last_studied_at|timesince }} ago
-            {% else %}
-                <i class="fas fa-book"></i> Not studied yet
-            {% endif %}
-        </div>
+      </div>
     </div>
+    
+  </div>
 
-    <!-- Two-column content area -->
-    <div class="deck-detail-content">
-        <!-- Left sidebar: Add card form and rating section -->
-        <div class="deck-detail-sidebar">
-            <!-- Add Card Form -->
-            <div class="fc-section">
-                <div class="fc-section-header">
-                    <h2>Add New Card</h2>
-                </div>
-                <div class="fc-section-body">
-                    <form method="post" class="fc-card-form">
-                        {% csrf_token %}
-                        <div class="mb-2">{{ card_form.front_text.label_tag }}{{ card_form.front_text }}</div>
-                        <div class="mb-2">{{ card_form.back_text.label_tag }}{{ card_form.back_text }}</div>
-                        <button type="submit" class="btn-upload-pill btn-pill mt-1"><i class="fas fa-plus"></i><span> Add New Card</span></button>
-                    </form>
-                </div>
-            </div>
+  <!-- Comment Section: Show only if deck is public OR user is not the owner -->
+  {% if deck.visibility == 'public' or user != deck.owner %}
+    {% include 'components/comment_section.html' with comments=comments user=user comment_url=comment_url delete_url_name='flashcards:delete_deck_comment' current_user=user %}
+  {% endif %}
 
-            <!-- Rating & Comments Section -->
-            {% if deck.visibility == 'public' and deck.verification_status == 'verified' and user != deck.owner %}
-            <div class="fc-section">
-                <div class="fc-section-header"><h2>Rate & Comment</h2></div>
-                <div class="fc-section-body">
-                    <form method="post" action="{% url 'flashcards:rate_deck' deck.pk %}" class="rating-form">
-                        {% csrf_token %}
-                        <div class="rating-form__input-group">
-                            <label for="ratingStars" class="form-label mb-1">Rating</label>
-                            <select id="ratingStars" name="stars" class="form-select" required>
-                                <option value="" disabled selected>Select rating</option>
-                                {% for i in "12345" %}
-                                  <option value="{{ i }}" {% if user_rating and user_rating.stars|stringformat:"s" == i %}selected{% endif %}>{{ i }} star{% if i != '1' %}s{% endif %}</option>
-                                {% endfor %}
-                            </select>
-                            {% if user_rating %}<small class="text-muted">Your rating: {{ user_rating.stars }} star{{ user_rating.stars|pluralize }}</small>{% endif %}
-                        </div>
-                        <button type="submit" class="btn btn-gradient-primary btn-sm">{% if user_rating %}Update{% else %}Submit{% endif %}</button>
-                    </form>
-                    <form method="post" action="{% url 'flashcards:add_deck_comment' deck.pk %}" class="mb-3">
-                        {% csrf_token %}
-                        <textarea name="text" class="form-control" rows="3" placeholder="Share your thoughts..." required></textarea>
-                        <div class="mt-2"><button type="submit" class="btn btn-outline-primary-soft btn-sm"><i class="fas fa-paper-plane"></i> Post Comment</button></div>
-                    </form>
-                    <div>
-                        <h6 class="page-meta mb-2">Comments</h6>
-                        {% if comments %}
-                            {% for c in comments %}
-                            <div class="border-bottom pb-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="d-flex gap-3 flex-grow-1">
-                                        {% if c.user.profile_picture %}
-                                            <img src="{{ c.user.profile_picture.url }}" alt="{{ c.user.get_display_name }}" class="avatar-circle avatar-40 object-fit-cover">
-                                        {% else %}
-                                            <div class="avatar-circle avatar-40"><span class="text-white small fw-bold">{{ c.user.get_display_name|first|upper }}</span></div>
-                                        {% endif %}
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex align-items-center gap-2 mb-1"><strong class="title-strong">{{ c.user.get_display_name }}</strong>{% if c.user.is_professor %}<span class="badge badge-professor badge-sm">Professor</span>{% endif %}</div>
-                                            <small class="text-muted d-block mb-2">{{ c.created_at|date:"M d, Y \a\t g:i A" }}</small>
-                                            <p class="mb-0 para-muted lh-16">{{ c.text|linebreaks }}</p>
-                                        </div>
-                                    </div>
-                                    {% if c.user == user %}
-                                    <button type="button" class="btn btn-sm btn-outline-danger delete-comment-btn" title="Delete" data-comment-id="{{ c.pk }}" data-delete-url="{% url 'flashcards:delete_deck_comment' deck.pk c.pk %}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-muted mb-0">No comments yet.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Right content: Cards list -->
-        <div class="deck-cards-section">
-            <h2><i class="fas fa-clone"></i> Cards ({{ deck.cards_count }})</h2>
-            {% if deck.cards_count > 0 %}
-                <ul class="fc-manage-cards">
-                    {% for card in cards %}
-                    <li class="fc-manage-item" id="card-{{ card.pk }}">
-                        <!-- View Mode -->
-                        <div class="card-view-mode">
-                            <div class="fc-manage-item-header">
-                                <strong>Front Text</strong>
-                                <div class="fc-manage-actions">
-                                    {% if user == deck.owner %}
-                                    <button type="button" class="fc-manage-action-btn edit-card-btn" title="Edit Card" data-card-id="{{ card.pk }}"><i class="fas fa-edit"></i></button>
-                                    <button type="button" class="fc-manage-action-btn delete-card-btn" title="Delete Card" data-card-id="{{ card.pk }}" data-card-title="{{ card.front_text|truncatechars:30|escapejs }}" data-delete-url="{% url 'flashcards:card_delete' deck.pk card.pk %}"><i class="fas fa-trash"></i></button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="fc-manage-text">
-                                <div class="card-front-content">{{ card.front_text }}</div>
-                            </div>
-                            <div class="fc-manage-back">
-                                <strong>Back Text</strong>
-                                <div class="card-back-content">{{ card.back_text }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Edit Mode (Hidden) -->
-                        <div class="card-edit-mode d-none">
-                            <div class="mb-2">
-                                <label class="form-label small text-muted">Front Text</label>
-                                <textarea class="form-control card-front-input" rows="2">{{ card.front_text }}</textarea>
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label small text-muted">Back Text</label>
-                                <textarea class="form-control card-back-input" rows="2">{{ card.back_text }}</textarea>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2">
-                                <button type="button" class="btn btn-sm btn--primary save-card-edit-btn" data-card-id="{{ card.pk }}" data-update-url="{% url 'flashcards:update_card' deck.pk card.pk %}"><i class="fas fa-check"></i> Save</button>
-                                <button type="button" class="btn btn-sm btn-secondary cancel-card-edit-btn" data-card-id="{{ card.pk }}"><i class="fas fa-times"></i> Cancel</button>
-                            </div>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p class="text-muted mb-0">No cards yet.</p>
-            {% endif %}
-        </div>
-    </div>
 </div>
 
-<script src="{% static 'js/deck-detail.js' %}"></script>
+<!-- Add Card Modal -->
+<div class="modal fade" id="addCardModal" tabindex="-1" aria-labelledby="addCardModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addCardModalLabel">Add New Card</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" id="addCardForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="frontText" class="form-label">Front Text</label>
+            <textarea class="form-control" id="frontText" name="front_text" rows="3" placeholder="Enter the question or prompt..." required></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="backText" class="form-label">Back Text</label>
+            <textarea class="form-control" id="backText" name="back_text" rows="3" placeholder="Enter the answer..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Card
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Cards Modal -->
+<div class="modal fade" id="previewCardsModal" tabindex="-1" aria-labelledby="previewCardsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewCardsModalLabel">Preview Cards ({{ deck.cards_count }})</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+        {% if cards %}
+          <div class="list-group">
+            {% for card in cards %}
+              <div class="list-group-item card-item-{{ card.pk }}" style="padding: 1rem; border-left: 3px solid var(--color-secondary);">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <small class="text-muted fw-semibold">Card {{ forloop.counter }}</small>
+                  {% if user == deck.owner %}
+                    <div class="dropdown">
+                      <button class="btn btn-sm btn-link text-muted p-0" type="button" id="cardDropdown{{ card.pk }}" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.1rem;">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cardDropdown{{ card.pk }}">
+                        <li>
+                          <a class="dropdown-item edit-card-btn" href="#" 
+                             data-card-id="{{ card.pk }}"
+                             data-front-text="{{ card.front_text }}"
+                             data-back-text="{{ card.back_text }}"
+                             data-update-url="{% url 'flashcards:update_card' deck.pk card.pk %}">
+                            <i class="fas fa-edit"></i> Edit
+                          </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                          <a class="dropdown-item text-danger delete-card-btn" href="#" 
+                             data-card-id="{{ card.pk }}" 
+                             data-delete-url="{% url 'flashcards:card_delete' deck.pk card.pk %}">
+                            <i class="fas fa-trash"></i> Delete
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <!-- View Mode -->
+                <div class="card-view-mode-{{ card.pk }}">
+                  <div class="mb-2">
+                    <p class="mb-1 fw-semibold" style="font-size: 0.95rem; color: var(--color-primary);" id="cardFront{{ card.pk }}">{{ card.front_text }}</p>
+                  </div>
+                  <div>
+                    <p class="mb-0 text-muted" style="font-size: var(--font-size-sm); line-height: var(--line-height-normal);" id="cardBack{{ card.pk }}">{{ card.back_text }}</p>
+                  </div>
+                </div>
+                
+                <!-- Edit Mode (Hidden by default) -->
+                <div class="card-edit-mode-{{ card.pk }} d-none">
+                  <div class="mb-3">
+                    <label class="form-label small text-muted mb-1">Question / Front</label>
+                    <textarea class="form-control card-front-input-{{ card.pk }}" rows="2" style="font-size: 0.95rem;">{{ card.front_text }}</textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small text-muted mb-1">Answer / Back</label>
+                    <textarea class="form-control card-back-input-{{ card.pk }}" rows="3" style="font-size: 0.875rem;">{{ card.back_text }}</textarea>
+                  </div>
+                  <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary cancel-edit-btn" data-card-id="{{ card.pk }}">
+                      <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary save-edit-btn" 
+                            data-card-id="{{ card.pk }}" 
+                            data-update-url="{% url 'flashcards:update_card' deck.pk card.pk %}">
+                      <i class="fas fa-check"></i> Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted text-center mb-0">No cards in this deck yet.</p>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rating Modal -->
+{% include 'components/rating_modal.html' with rate_url=rate_url modal_id='ratingModal' item_type='Deck' %}
+
+<!-- Edit Deck Modal -->
+{% if user == deck.owner %}
+<div class="modal fade" id="editDeckModal" tabindex="-1" aria-labelledby="editDeckModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editDeckModalLabel">Edit Deck</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editDeckForm" data-deck-id="{{ deck.pk }}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="editDeckTitle" class="form-label">Title <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="editDeckTitle" name="title" value="{{ deck.title }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="editDeckDescription" class="form-label">Description</label>
+            <textarea class="form-control" id="editDeckDescription" name="description" rows="3">{{ deck.description }}</textarea>
+          </div>
+          <div class="mb-3">
+            <label for="editDeckCategory" class="form-label">Category <span class="text-danger">*</span></label>
+            <select class="form-select" id="editDeckCategory" name="category" required>
+              <option value="">Select a category</option>
+              <option value="mathematics" {% if deck.category == 'mathematics' %}selected{% endif %}>Mathematics</option>
+              <option value="science" {% if deck.category == 'science' %}selected{% endif %}>Science</option>
+              <option value="history" {% if deck.category == 'history' %}selected{% endif %}>History</option>
+              <option value="language" {% if deck.category == 'language' %}selected{% endif %}>Language</option>
+              <option value="technology" {% if deck.category == 'technology' %}selected{% endif %}>Technology</option>
+              <option value="arts" {% if deck.category == 'arts' %}selected{% endif %}>Arts</option>
+              <option value="business" {% if deck.category == 'business' %}selected{% endif %}>Business</option>
+              <option value="other" {% if deck.category == 'other' %}selected{% endif %}>Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="editDeckVisibility" name="visibility" {% if deck.visibility == 'public' %}checked{% endif %}>
+              <label class="form-check-label" for="editDeckVisibility">
+                Make this deck public
+              </label>
+            </div>
+            <small class="text-muted">
+              {% if user.is_professor %}
+                Public decks are automatically verified for professors.
+              {% else %}
+                Public decks require verification. Private decks are only visible to you.
+              {% endif %}
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}
